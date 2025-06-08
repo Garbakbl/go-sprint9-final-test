@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	SIZE = 100_000_000
-
+	SIZE   = 100_000_000
 	CHUNKS = 8
 )
 
@@ -32,7 +31,10 @@ func generateRandomElements(size int) []int {
 
 // maximum returns the maximum number of elements.
 func maximum(data []int) int {
-	var res int
+	if len(data) == 0 || data == nil {
+		return 0
+	}
+	var res = data[0]
 	for i := range data {
 		if data[i] > res {
 			res = data[i]
@@ -42,30 +44,23 @@ func maximum(data []int) int {
 }
 
 // maxChunks returns the maximum number of elements in a chunks.
-func maxChunks(data []int) int {
-	var (
-		matrix [CHUNKS][]int
-		maxArr []int
-		wg     sync.WaitGroup
-		mu     sync.Mutex
-	)
+func maxChunks(data []int, chunks int) int {
+	var wg sync.WaitGroup
+	maxArr := make([]int, chunks)
 
-	tail := SIZE % CHUNKS
+	wg.Add(chunks)
+	for i := 0; i < chunks; i++ {
+		go func(chunk []int) {
+			maxArr[i] = maximum(chunk)
+			wg.Done()
+		}(data[i*(len(data)/chunks) : (i+1)*(len(data)/chunks)])
+	}
+	wg.Wait()
+
+	tail := len(data) % chunks
 	if tail != 0 {
 		maxArr = append(maxArr, maximum(data[len(data)-tail:]))
 	}
-
-	wg.Add(CHUNKS)
-	for i := 0; i < CHUNKS; i++ {
-		go func() {
-			matrix[i] = data[i*(SIZE/CHUNKS) : (i+1)*(SIZE/CHUNKS)]
-			mu.Lock()
-			maxArr = append(maxArr, maximum(matrix[i]))
-			mu.Unlock()
-			wg.Done()
-		}()
-	}
-	wg.Wait()
 	return maximum(maxArr)
 }
 
@@ -86,7 +81,7 @@ func main() {
 
 	fmt.Printf("Ищем максимальное значение в %d потоков\n", CHUNKS)
 	start = time.Now()
-	max = maxChunks(arr)
+	max = maxChunks(arr, CHUNKS)
 	elapsed = time.Since(start).Microseconds()
 	fmt.Printf("Максимальное значение элемента: %d\nВремя поиска: %d ms\n", max, elapsed)
 }

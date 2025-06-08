@@ -32,6 +32,8 @@ func TestMaximum(t *testing.T) {
 	}{
 		{name: "only", arr: []int{1000}, res: 1000},
 		{name: "normal", arr: []int{1, 2, 5, 100500}, res: 100500},
+		{name: "empty", arr: []int{}, res: 0},
+		{name: "nil", arr: nil, res: 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
